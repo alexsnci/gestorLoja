@@ -82,4 +82,31 @@ class VendaStore {
     }
     isLoading.value = false;
   }
+
+  Future passarcliente({required int idvenda, required String nome}) async {
+    isLoading.value = true;
+    try {
+      final result =
+          await repository.passarcliente(idvenda: idvenda, nome: nome);
+      finalizar.value = result;
+    } on NotFoundException catch (e) {
+      erro.value = e.toString();
+    } catch (e) {
+      erro.value = e.toString();
+    }
+    isLoading.value = false;
+  }
+
+  Future passartipo({required int idvenda, required String tipo}) async {
+    isLoading.value = true;
+    try {
+      final result = await repository.passartipo(idvenda: idvenda, tipo: tipo);
+      finalizar.value = result;
+    } on NotFoundException catch (e) {
+      erro.value = e.toString();
+    } catch (e) {
+      erro.value = e.toString();
+    }
+    isLoading.value = false;
+  }
 }

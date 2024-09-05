@@ -51,12 +51,32 @@ implementation
           aRes.Send(venda.finalizarPedido(aReq.Query.Field('id').AsInteger));
   end;
 
+  procedure onAlterarTipoVenda(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          venda : iVenda;
+          venda := TVendaModel.New;
+
+          aRes.Send(venda.passarTipoVenda(aReq.Query.Field('idpedido').AsInteger,aReq.Query.Field('tipo').AsString));
+  end;
+
+  procedure onAlterarCliente(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          venda : iVenda;
+          venda := TVendaModel.New;
+
+          aRes.Send(venda.passarClienteVenda(aReq.Query.Field('idpedido').AsInteger,aReq.Query.Field('nome').asstring));
+  end;
+
   procedure Start;
   begin
       Thorse.Get('Venda',onGetVenda);
       Thorse.Post('Venda',onPostVenda);
       Thorse.Get('Statusvenda',onGetStatusVenda);
       Thorse.Post('Cancelarvenda',onCancelVenda);
-      Thorse.Get('Finalizarpedido',onFinalizarPedido) ;
+      Thorse.Get('Finalizarpedido',onFinalizarPedido);
+      Thorse.Get('vendatipo',onAlterarTipoVenda) ;
+      Thorse.Get('vendacliente',onAlterarCliente) ;
   end;
 end.

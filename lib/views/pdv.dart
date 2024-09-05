@@ -194,7 +194,7 @@ class _PDVState extends State<PDV> {
                                             idloja: 1,
                                             data: '',
                                             status: 'Pendente',
-                                            tipo: 'Local',
+                                            tipo: 'L',
                                             valorcompra: 0),
                                       ]);
                                       idpedido =

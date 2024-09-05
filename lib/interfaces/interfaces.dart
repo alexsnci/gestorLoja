@@ -99,6 +99,8 @@ abstract class IVenda {
   Future<String> statusVenda({required int idcolaborador});
   Future<String> cancelarVenda({required int idvenda});
   Future<String> finalizarvenda({required int idvenda});
+  Future<String> passarcliente({required int idvenda, required String nome});
+  Future<String> passartipo({required int idvenda, required String tipo});
 }
 
 abstract class IPagamentosPedido {

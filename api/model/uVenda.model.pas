@@ -13,6 +13,8 @@ interface
         function verificarvenda(idcolaborador:integer):String;
         function cancelarPedido(id:integer):String;
         function finalizarPedido(id:integer):String;
+        function passarTipoVenda(idpedido: integer;tipo:String): String;
+        function passarClienteVenda(idPedido: integer; nome : String): String;
 
     public
       constructor Create;
@@ -143,6 +145,29 @@ end;
 class function TVendaModel.New: iVenda;
 begin
     Result := self.Create;
+end;
+
+function TVendaModel.passarClienteVenda(idPedido: integer; nome : String): String;
+begin
+    var
+      idCliente : integer;
+      script.sql('select id,nome from clientes where nome = :nome').parametro('nome',nome).abrir;
+      if script.retornoquery.RecordCount>0 then
+      begin
+          idCliente := script.retornoquery.FieldByName('id').AsInteger;
+          script.sql('select * from venda where id = :id').parametro('id', idPedido).abrir.edit
+                .campo('idcliente',idPedido)
+                .post;
+          Result := 'Pedido editado com sucesso';
+      end
+      else
+      Result := 'Cliente não encontrado';
+end;
+
+function TVendaModel.passarTipoVenda(idpedido: integer;tipo:String): String;
+begin
+    script.sql('select * from venda where id = :id').parametro('id',idpedido).abrir.edit.campo('tipo',tipo).post;
+    Result := 'Pedido editado com sucesso';
 end;
 
 function TVendaModel.post(dados: String): String;

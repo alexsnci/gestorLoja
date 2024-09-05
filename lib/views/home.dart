@@ -258,8 +258,7 @@ class _HomeState extends State<Home> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                              'Olá $nomeUser seu nível de acesso é: ${nivelacesso == 1 ? 'Administrador' : nivelacesso == 2 ? 'Caixa' : 'Vendedor'}'),
+                          Text('Olá $nomeUser '),
                           Row(
                             children: [
                               Stack(

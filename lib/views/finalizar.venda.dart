@@ -29,8 +29,12 @@ class FinalizarVenda extends StatefulWidget {
 class _FinalizarVendaState extends State<FinalizarVenda> {
   var real = NumberFormat.currency(locale: 'pt_BR', customPattern: 'R\$ ');
   late PagamentosPedidosStore store;
+  late VendaStore storevenda;
   double valorRestante = 0;
   double valorPago = 0;
+  bool local = true;
+  bool delivery = false;
+  String tipoVenda = 'L';
 
   @override
   void initState() {
@@ -38,6 +42,9 @@ class _FinalizarVendaState extends State<FinalizarVenda> {
       repository:
           PagamentosPedidosRepository(client: HttpClient(), url: server),
     );
+    storevenda = VendaStore(
+        repository: VendaRepository(client: HttpClient(), url: server));
+
     _getPagamentos();
 
     super.initState();
@@ -98,8 +105,48 @@ class _FinalizarVendaState extends State<FinalizarVenda> {
             const Divider(
               color: Colors.green,
             ),
+            Row(
+              children: [
+                const Text('Tipo da venda.  '),
+                Checkbox(
+                  value: local,
+                  onChanged: (value) async {
+                    setState(() {
+                      local = !local;
+                      delivery = !delivery;
+                    });
+                    if (local) {
+                      await storevenda.passartipo(idvenda: idpedido, tipo: 'L');
+                    } else {
+                      await storevenda.passartipo(idvenda: idpedido, tipo: 'D');
+                    }
+                  },
+                ),
+                const Text('Local  '),
+                Padding(
+                  padding: const EdgeInsets.only(left: 50),
+                  child: Checkbox(
+                    value: delivery,
+                    onChanged: (value) async {
+                      setState(() {
+                        delivery = !delivery;
+                        local = !local;
+                      });
+                      if (local) {
+                        await storevenda.passartipo(
+                            idvenda: idpedido, tipo: 'D');
+                      } else {
+                        await storevenda.passartipo(
+                            idvenda: idpedido, tipo: 'L');
+                      }
+                    },
+                  ),
+                ),
+                const Text('Delivery')
+              ],
+            ),
             Padding(
-              padding: const EdgeInsets.only(top: 50),
+              padding: const EdgeInsets.only(top: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

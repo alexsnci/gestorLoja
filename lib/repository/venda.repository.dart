@@ -121,4 +121,46 @@ class VendaRepository implements IVenda {
       throw Exception('Não foi possível carregar os dados do servidor!');
     }
   }
+
+  @override
+  Future<String> passarcliente(
+      {required int idvenda, required String nome}) async {
+    final response = await client.get(
+      url: url,
+      endpoint: 'vendacliente?idpedido=$idvenda&nome=$nome',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.contains('Erro ao execultar consulta')) {
+        return response.body;
+      } else {
+        return response.body;
+      }
+    } else if (response.statusCode == 404) {
+      throw NotFoundException('URL não encontrada!');
+    } else {
+      throw Exception('Não foi possível carregar os dados do servidor!');
+    }
+  }
+
+  @override
+  Future<String> passartipo(
+      {required int idvenda, required String tipo}) async {
+    final response = await client.get(
+      url: url,
+      endpoint: 'vendatipo?idpedido=$idvenda&tipo=$tipo',
+    );
+
+    if (response.statusCode == 200) {
+      if (response.body.contains('Erro ao execultar consulta')) {
+        return response.body;
+      } else {
+        return response.body;
+      }
+    } else if (response.statusCode == 404) {
+      throw NotFoundException('URL não encontrada!');
+    } else {
+      throw Exception('Não foi possível carregar os dados do servidor!');
+    }
+  }
 }
