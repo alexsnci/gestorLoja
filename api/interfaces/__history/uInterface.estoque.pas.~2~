@@ -1,0 +1,11 @@
+unit uInterface.estoque;
+
+interface
+   type
+    IEstoque = interface
+
+    end;
+
+implementation
+
+end.

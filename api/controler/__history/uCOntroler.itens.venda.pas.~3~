@@ -1,0 +1,29 @@
+unit uCOntroler.itens.venda;
+
+interface
+  uses horse, uInterface.itens.venda, uItens.venda.model;
+
+  procedure Start;
+
+implementation
+  procedure onGetItensvenda(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          itens : iItensVenda;
+          itens := TItensVendaModel.New;
+          aRes.Send(itens.get(aReq.Query.Field('pedido').AsInteger));
+  end;
+  procedure onPostItensvenda(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          itens : iItensVenda;
+          itens := TItensVendaModel.New;
+          aRes.Send(itens.post(aReq.body));
+  end;
+
+  procedure Start;
+  begin
+    Thorse.Get('Itensvenda',onGetItensvenda);
+    Thorse.Post('Itensvenda',onPostItensVenda);
+  end;
+end.

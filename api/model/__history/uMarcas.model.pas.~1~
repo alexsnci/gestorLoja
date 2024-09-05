@@ -1,0 +1,116 @@
+unit uProdutos.model;
+
+interface
+  uses uInterface.produtos,uInterface.Scrips, System.JSON,uScrips,Firedac.Comp.Client, dataset.Serialize,System.SysUtils;
+
+  type
+      TProdutosModel = class(TInterfacedObject,IProdutos)
+      private
+          script : iScripts;
+          function get(valor : String) : TjsonArray;
+          function post(dados : String) : String;
+      public
+        constructor Create;
+        destructor Destroy; override;
+        class function New:IProdutos;
+      end;
+
+implementation
+
+{ TProdutosModel }
+
+constructor TProdutosModel.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TProdutosModel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TProdutosModel.get(valor: String): TjsonArray;
+begin
+    if valor <> '' then
+        result := script.sql('select * from produtos where p.descricao like :nome order by c.descricao').parametro('nome','%'+valor+'%').abrir.retornoJson
+    else
+        result := script.sql('select * from produtos order by descricao').abrir.retornoJson;
+end;
+
+class function TProdutosModel.New: IProdutos;
+begin
+    Result := self.Create;
+end;
+
+function TProdutosModel.post(dados: String): String;
+begin
+    if dados <> '' then
+     begin
+        var
+            mDados : TFDmemtable;
+            mDados := TFDmemtable.Create(nil);
+            try
+              mDados.LoadFromJSON(dados);
+              if mDados.FieldByName('id').asinteger <> 0 then
+              begin
+
+
+                    script.sql('select * from produtos where id = :id')
+                        .parametro('id',mDados.FieldByName('id').AsInteger)
+                        .abrir
+                        .edit
+                        .campo('descricao',mDados.FieldByName('descricao').AsString)
+                        .campo('codigobarras',mDados.FieldByName('codigobarras').AsString)
+
+                        .campo('status',mDados.FieldByName('status').AsString)
+                        .campo('modelo',mDados.FieldByName('modelo').AsString)
+                        .campo('cor',mDados.FieldByName('cor').AsString)
+                        .campo('tamanho',mDados.FieldByName('tamanho').AsString)
+                        .post;
+                        Result := 'Produto editado com sucesso!';
+              end
+              else
+              begin
+
+                var
+                    id : integer;
+                    id := script.geraCodigo('id','produtos');
+
+                    var idCategoria : integer;
+                        idCategoria := 0;
+
+                        idCategoria := strtointdef(script.sql('select id,descricao from categorias where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('categoria')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+                     var
+                        idSetor : integer;
+                        idSetor := 0;
+
+                        idSetor :=    strtointdef(script.sql('select id,descricao from setores where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('setor')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    script.sql('select * from produtos where 1=2')
+                          .abrir
+                          .insert
+                          .campo('id',id)
+                          .campo('descricao',mDados.FieldByName('descricao').AsString)
+                          .campo('codigobarras',mDados.FieldByName('codigobarras').AsString)
+                          .campo('idcategoria',idCategoria)
+                          .campo('idsetor',idSetor)
+                          .campo('status',mDados.FieldByName('status').AsString)
+                          .campo('modelo',mDados.FieldByName('modelo').AsString)
+                          .campo('cor',mDados.FieldByName('cor').AsString)
+                          .campo('tamanho',mDados.FieldByName('tamanho').AsString)
+                          .post;
+
+                          Result := 'Produto inserido com sucesso!';
+              end;
+            finally
+              mDados.DisposeOf;
+            end;
+     end;
+end;
+
+end.

@@ -1,0 +1,26 @@
+object Dm: TDm
+  OnCreate = DataModuleCreate
+  Height = 1080
+  Width = 1440
+  PixelsPerInch = 144
+  object cursor: TFDGUIxWaitCursor
+    Provider = 'Console'
+    Left = 272
+    Top = 260
+  end
+  object libmyql: TFDPhysMySQLDriverLink
+    Left = 688
+    Top = 216
+  end
+  object conexao: TFDConnection
+    Params.Strings = (
+      'Database=movcamp'
+      'User_Name=movcamp_db'
+      'Password=2a5L9e4x@102030'
+      'DriverID=MySQL')
+    TxOptions.StopOptions = [xoIfCmdsInactive, xoIfAutoStarted, xoFinishRetaining]
+    LoginPrompt = False
+    Left = 768
+    Top = 488
+  end
+end

@@ -1,0 +1,29 @@
+unit uControler.produtos;
+
+interface
+  uses horse,uInterface.produtos,uProdutos.model;
+  procedure Start;
+
+implementation
+procedure onGetProdutos(aReq : ThorseRequest; aRes : ThorseResponse);
+begin
+    var
+        produto : IProdutos;
+        produto := TProdutosModel.New;
+        aRes.Send(produto.Get(aReq.Query.Field('nome').AsString));
+end;
+
+procedure onPostProdutos(aReq : ThorseRequest; aRes : ThorseResponse);
+begin
+    var
+        produto : IProdutos;
+        produto := TProdutosModel.New;
+        aRes.Send(produto.post(aReq.Body));
+end;
+procedure Start;
+begin
+    Thorse.Get('Produtos',onGetProdutos);
+    Thorse.Post('Produtos',onPostProdutos);
+end;
+
+end.

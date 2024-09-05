@@ -1,0 +1,34 @@
+unit uControler.caixa;
+
+interface
+  uses
+      uInterface.caixa, uCaixa.model, horse;
+
+  procedure Start;
+
+implementation
+  procedure onGetCaixa(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          caixa : iCaixa;
+          caixa := TCaixaModel.New;
+
+      aRes.Send(caixa.get(aReq.Query.Field('id').AsInteger));
+  end;
+
+  procedure onPostCaixa(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          caixa : iCaixa;
+          caixa := TCaixaModel.New;
+
+      aRes.Send(caixa.post(aReq.Body));
+  end;
+
+
+  procedure Start;
+  begin
+      THorse.Get('Caixa',onGetCaixa);
+      Thorse.Post('Caixa',onPostCaixa);
+  end;
+end.

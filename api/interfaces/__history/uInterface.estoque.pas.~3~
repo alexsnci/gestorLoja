@@ -1,0 +1,13 @@
+unit uInterface.estoque;
+
+interface
+  uses System.JSON;
+   type
+    IEstoque = interface
+        function post(dados : String) : String;
+        function get(valor : String) : TJSonArray;
+    end;
+
+implementation
+
+end.

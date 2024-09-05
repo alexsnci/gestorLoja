@@ -1,0 +1,30 @@
+unit uControler.estoque;
+
+interface
+  uses horse, uInterface.estoque,uEstoque.model;
+  procedure Start;
+
+implementation
+  procedure onGetEstoque(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+    var
+      estoque : IEstoque;
+      estoque := TEstoque.New;
+
+      aRes.Send(estoque.get(aReq.Query.Field('nome').AsString));
+  end;
+
+  procedure onPostEstoque(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+     var
+      estoque : IEstoque;
+      estoque := TEstoque.New;
+
+      aRes.Send(estoque.post(aReq.Body));
+  end;
+  procedure Start;
+  begin
+    Thorse.Get('Estoque',onGetEstoque);
+    Thorse.Post('Estoque',onPostEstoque)
+  end;
+end.

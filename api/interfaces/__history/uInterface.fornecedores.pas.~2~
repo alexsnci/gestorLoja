@@ -1,0 +1,11 @@
+unit uInterface.fornecedores;
+
+interface
+  type
+    IFornecedores = interface
+
+    end;
+
+implementation
+
+end.

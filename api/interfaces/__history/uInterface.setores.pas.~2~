@@ -1,0 +1,11 @@
+unit uInterface.setores;
+
+interface
+  type
+    ISetores = interface
+
+    end;
+
+implementation
+
+end.

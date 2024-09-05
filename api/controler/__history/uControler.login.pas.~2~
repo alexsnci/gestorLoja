@@ -1,0 +1,21 @@
+unit uControler.login;
+
+interface
+  uses uInterface.login,uLogin.model,horse;
+
+  procedure Start;
+
+implementation
+  procedure onGetLogin(aReq : THorseRequest; aRes : ThorseResponse);
+  begin
+      var
+        login : iLogin;
+        login := TLoginModel.New;
+
+        aRes.Send(login.get(aReq.Query.Field('user').AsString, aReq.Query.Field('password').AsString));
+  end;
+  procedure Start;
+  begin
+    Thorse.Get('login',onGetLogin);
+  end;
+end.

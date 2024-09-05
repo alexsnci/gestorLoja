@@ -1,0 +1,31 @@
+unit uControler.venda;
+
+interface
+  uses horse, uInterface.venda, uVenda.model;
+
+  procedure Start;
+
+implementation
+  procedure onGetVenda(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          venda : iVenda;
+          venda := TVendaModel.New;
+
+          aRes.Send(venda.get(aReq.Query.Field('id').asinteger));
+  end;
+
+  procedure onPostVenda(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          venda : iVenda;
+          venda := TVendaModel.New;
+
+          aRes.Send(venda.post(aReq.Body));
+  end;
+  procedure Start;
+  begin
+      Thorse.Get('venda',onGetVenda);
+      Thorse.Post('venda',onPostVenda);
+  end;
+end.

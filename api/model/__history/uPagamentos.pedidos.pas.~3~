@@ -1,0 +1,77 @@
+unit uPagamentos.pedidos;
+
+interface
+  uses Dataset.Serialize, uInterface.pagamentos.pedidos,System.JSON, Firedac.Comp.Client, uInterface.Scrips,uScrips, System.SysUtils;
+
+  type
+      TPagamentosPedidosModel = class(TInterfacedObject,iPagamentosPedidos)
+      private
+        scripts : iScripts;
+        function get(idpedido:integer):TJSonArray;
+        function post(dados : String):String;
+      public
+        constructor Create;
+        destructor Destroy; override;
+        class function New : iPagamentosPedidos;
+      end;
+
+implementation
+
+{ TPagamentosPedidosModel }
+
+constructor TPagamentosPedidosModel.Create;
+begin
+    scripts := TScripts.New;
+end;
+
+destructor TPagamentosPedidosModel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TPagamentosPedidosModel.get(idpedido: integer): TJSonArray;
+begin
+    Result := scripts.sql('select *,sum(valor) as totalpago from pagamentos_pedido where idpedido = :id').parametro('idpedido',idpedido).abrir.retornoJson
+end;
+
+class function TPagamentosPedidosModel.New: iPagamentosPedidos;
+begin
+  Result := Self.Create;
+end;
+
+function TPagamentosPedidosModel.post(dados: String): String;
+begin
+     if dados <> '' then
+     begin
+        var
+            mDados : TFDmemtable;
+
+        try
+           mDados := TFDmemtable.Create(nil);
+           mDados.LoadFromJSON(dados);
+
+           var
+              id : integer;
+              id := 0;
+              id := scripts.geraCodigo('id','pagamentos_pedido');
+
+              scripts.sql('select * from pagamentos_pedido where 1=2')
+                     .abrir
+                     .insert
+                     .campo('id',id)
+                     .campo('idpedido',mDados.FieldByName('idpedido').AsInteger)
+                     .campo('idcaixa',mDados.FieldByName('idcaixa').AsInteger)
+                     .campo('formapagamento',mDados.FieldByName('formapagamento').AsString)
+                     .campo('data',datetostr(Date()))
+                     .campo('valor',mDados.FieldByName('valor').AsCurrency)
+                     .post;
+
+              Result := 'Forma inserida com sucesso!';
+        finally
+            mDados.DisposeOf;
+        end;
+     end;
+end;
+
+end.

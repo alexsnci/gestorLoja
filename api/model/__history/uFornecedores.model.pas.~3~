@@ -1,0 +1,48 @@
+unit uFornecedores.model;
+
+interface
+  uses uInterface.fornecedores,System.JSON,uInterface.Scrips,uScrips;
+  type
+    TFornecedores = class(TInterfacedObject,IFornecedores)
+    private
+      script : iScripts;
+      function get(valor : String) : TJsonArray;
+      function post(dados : String): String;
+
+    public
+     constructor Create;
+     destructor Destroy; override;
+     class function New : IFornecedores;
+    end;
+
+implementation
+
+{ TFornecedores }
+
+constructor TFornecedores.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TFornecedores.Destroy;
+begin
+
+  inherited;
+end;
+
+function TFornecedores.get(valor: String): TJsonArray;
+begin
+
+end;
+
+class function TFornecedores.New: IFornecedores;
+begin
+    result  := self.Create;
+end;
+
+function TFornecedores.post(dados: String): String;
+begin
+
+end;
+
+end.

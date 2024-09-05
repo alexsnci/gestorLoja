@@ -1,0 +1,11 @@
+unit uInterface.produtos;
+
+interface
+  type
+    IProdutos = interface
+
+    end;
+
+implementation
+
+end.

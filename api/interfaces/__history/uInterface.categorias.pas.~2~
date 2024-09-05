@@ -1,0 +1,11 @@
+unit uInterface.categorias;
+
+interface
+  type
+    ICategorias = interface
+
+    end;
+
+implementation
+
+end.

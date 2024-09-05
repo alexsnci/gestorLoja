@@ -1,0 +1,305 @@
+unit uEstoque.model;
+
+interface
+  uses uInterface.estoque, uInterface.Scrips, uScrips, System.JSON,Firedac.Comp.Client, Dataset.Serialize, System.SysUtils;
+
+  type
+    TEstoque = class(TInterfacedObject,IEstoque)
+    private
+      script : iScripts;
+      function post(dados : String) : String;
+      function get(valor : String) : TJSonArray;
+      function getEstoquePorCategoria(idCategoria : integer):TJsonArray;
+      function getProduto(valor:String):TJsonArray;
+      function entradademercadoria(id:integer; qtd:Double;iduser:integer):String;
+
+    public
+      constructor Create;
+      destructor Destroy;override;
+      class function New:IEstoque;
+    end;
+
+implementation
+
+{ TEstoque }
+
+constructor TEstoque.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TEstoque.Destroy;
+begin
+
+  inherited;
+end;
+
+function TEstoque.entradademercadoria(id:integer; qtd:Double;iduser:integer): String;
+begin
+  var
+      quantidadeatual : Double;
+  script.sql('select * from estoque where id = :id')
+        .parametro('id',id)
+        .abrir;
+
+  quantidadeatual := script.retornoquery.FieldByName('quantidadeatual').AsCurrency;
+
+  script.edit
+        .campo('quantidadeatual',qtd)
+        .post;
+
+  var
+      identradaproduto : integer;
+
+      identradaproduto := script.geraCodigo('id','entrada_mercadoria');
+
+  script.sql('select * from entrada_mercadoria where 1=2')
+        .abrir
+        .insert
+        .campo('id',identradaproduto)
+        .campo('idproduto',id)
+        .campo('quantidadeatual',quantidadeatual)
+        .campo('novaquantidade',qtd)
+        .campo('idusuario',iduser)
+        .post;
+
+
+  result := 'Quantidade atualizada com sucesso!';
+end;
+
+function TEstoque.get(valor: String): TJSonArray;
+begin
+    if valor <> '' then
+    begin
+       result := script.sql('select e.*,p.descricao as produto,f.razaosocial as fornecedor, c.descricao as categoria, s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join categorias as c on e.idcategoria = c.id join setores as s on e.idsetor = s.id where  e.descricao = :nome order by e.descricao')
+                        .parametro('nome','%'+valor+'%')
+                        .abrir.retornoJson;
+    end
+    else
+    begin
+        result := script.sql('select e.*,p.descricao as produto,f.razaosocial as fornecedor, c.descricao as categoria , s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join categorias as c on e.idcategoria = c.id join setores as s on e.idsetor = s.id  order by e.descricao').abrir.retornoJson;
+    end;
+
+end;
+
+function TEstoque.getEstoquePorCategoria(idCategoria: integer): TJsonArray;
+begin
+  result := script.sql('select e.*,p.descricao as produto,f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  e.idcategoria = :id order by e.descricao')
+                        .parametro('id',idCategoria)
+                        .abrir.retornoJson;
+end;
+
+function TEstoque.getProduto(valor: String): TJsonArray;
+begin
+     script.sql('select e.*,p.descricao as produto,f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  e.descricao like :nome order by e.descricao')
+            .parametro('nome','%'+valor+'%')
+            .abrir;
+     if script.retornoquery.RecordCount>0 then
+     begin
+       result := script.retornoJson;
+       exit;
+     end;
+
+     script.sql('select e.*,p.descricao as produto,f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  e.codigobarras = :nome order by e.descricao')
+           .parametro('nome','%'+valor+'%')
+           .abrir;
+
+    if script.retornoquery.RecordCount>0 then
+     begin
+       result := script.retornoJson;
+       exit;
+     end;
+
+     script.sql('select e.*,p.descricao as produto,f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  p.id = :nome order by e.descricao')
+           .parametro('nome',valor)
+           .abrir;
+
+    if script.retornoquery.RecordCount>0 then
+     begin
+       result := script.retornoJson;
+       exit;
+     end;
+
+     script.sql('select e.*,p.descricao as produto, f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  e.cor like :nome order by e.descricao')
+           .parametro('nome','%'+valor+'%')
+           .abrir;
+
+    if script.retornoquery.RecordCount>0 then
+     begin
+       result := script.retornoJson;
+       exit;
+     end;
+
+     script.sql('select e.*,p.descricao as produto, f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  e.modelo like :nome order by e.descricao')
+           .parametro('nome','%'+valor+'%')
+           .abrir;
+
+    if script.retornoquery.RecordCount>0 then
+     begin
+       result := script.retornoJson;
+       exit;
+     end;
+
+     script.sql('select e.*,p.descricao as produto, f.razaosocial as fornecedor,s.descricao as setor from estoque as e join marcas as p on e.idmarca = '+
+                'p.id join fornecedores as f on e.idfornecedor = f.id join setores as s on e.idsetor = s.id where  e.tamanho like :nome order by e.descricao')
+           .parametro('nome','%'+valor+'%')
+           .abrir;
+
+    if script.retornoquery.RecordCount>0 then
+     begin
+       result := script.retornoJson;
+       exit;
+     end
+     else
+     Result := script.retornoJson;
+
+end;
+
+class function TEstoque.New: IEstoque;
+begin
+    result := Self.Create;
+end;
+
+function TEstoque.post(dados: String): String;
+begin
+    if dados <> '' then
+     begin
+        var
+            mDados : TFDmemtable;
+            mDados := TFDmemtable.Create(nil);
+            try
+              mDados.LoadFromJSON(dados);
+              if mDados.FieldByName('id').asinteger <> 0 then
+              begin
+                    var idFornecedor : integer;
+                        idFornecedor := 0;
+
+                        idFornecedor := strtointdef(script.sql('select id,razaosocial from fornecedores where razaosocial = :nome')
+                                             .parametro('nome',mDados.FieldByName('fornecedor')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    var idmarca    := strtointdef(script.sql('select id,descricao from marcas where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('produto')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    var idCategoria : integer;
+                        idCategoria := 0;
+
+                        idCategoria := strtointdef(script.sql('select id,descricao from categorias where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('categoria')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    var
+                        idSetor : integer;
+                        idSetor := 0;
+
+                        idSetor :=    strtointdef(script.sql('select id,descricao from setores where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('setor')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    script.sql('select * from estoque where id = :id')
+                        .parametro('id',mDados.FieldByName('id').AsInteger)
+                        .abrir
+                        .edit
+                        .campo('idmarca',idmarca)
+                        .campo('descricao',mDados.FieldByName('descricao').AsString)
+                        .campo('codigobarras',mDados.FieldByName('codigobarras').AsString)
+                        .campo('idfornecedor',idfornecedor)
+                        .campo('valoraquisicao',mDados.FieldByName('valoraquisicao').AsCurrency)
+                        .campo('margemlucro',mDados.FieldByName('margemlucro').AsCurrency)
+                        .campo('valorvenda',mDados.FieldByName('valorvenda').AsCurrency)
+                        .campo('quantidadeatual',mDados.FieldByName('quantidadeatual').AsCurrency)
+                        .campo('quantidademinima',mDados.FieldByName('quantidademinima').AsCurrency)
+                        .campo('idcategoria',idCategoria)
+                        .campo('idsetor',idSetor)
+                        .campo('cor',mDados.FieldByName('cor').AsString)
+                        .campo('tamanho',mDados.FieldByName('tamanho').asstring)
+                        .campo('modelo',mDados.FieldByName('modelo').AsString)
+                        .post;
+                        Result := 'Produto editado com sucesso!';
+              end
+              else
+              begin
+
+                var
+                    id : integer;
+                    id := script.geraCodigo('id','estoque');
+
+                    var idFornecedor : integer;
+                        idFornecedor := 0;
+
+                        idFornecedor := strtointdef(script.sql('select id,razaosocial from fornecedores where razaosocial = :nome')
+                                             .parametro('nome',mDados.FieldByName('fornecedor')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    var idmarca    := strtointdef(script.sql('select id,descricao from marcas where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('produto')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+                     var idCategoria : integer;
+                        idCategoria := 0;
+
+                        idCategoria := strtointdef(script.sql('select id,descricao from categorias where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('categoria')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    var
+                        idSetor : integer;
+                        idSetor := 0;
+
+                        idSetor :=    strtointdef(script.sql('select id,descricao from setores where descricao = :nome')
+                                             .parametro('nome',mDados.FieldByName('setor')
+                                             .AsString).abrir.retornoquery.FieldByName('id').asstring,0);
+
+                    script.sql('select * from estoque where 1=2')
+                          .abrir
+                          .insert
+                          .campo('id',id)
+                          .campo('idmarca',idmarca)
+                          .campo('descricao',mDados.FieldByName('descricao').AsString)
+                          .campo('idfornecedor',idfornecedor)
+                          .campo('valoraquisicao',mDados.FieldByName('valoraquisicao').AsCurrency)
+                          .campo('margemlucro',mDados.FieldByName('margemlucro').AsCurrency)
+                          .campo('valorvenda',mDados.FieldByName('valorvenda').AsCurrency)
+                          .campo('quantidadeatual',mDados.FieldByName('quantidadeatual').AsCurrency)
+                          .campo('quantidademinima',mDados.FieldByName('quantidademinima').AsCurrency)
+                          .campo('idcategoria',idCategoria)
+                          .campo('idsetor',idSetor)
+                          .campo('cor',mDados.FieldByName('cor').AsString)
+                          .campo('tamanho',mDados.FieldByName('tamanho').asstring)
+                          .campo('modelo',mDados.FieldByName('modelo').AsString)
+                          .post;
+
+
+
+                  var
+                      identradaproduto : integer;
+
+                      identradaproduto := script.geraCodigo('id','entrada_mercadoria');
+
+                  script.sql('select * entrada_mercadoria where 1=2')
+                        .abrir
+                        .insert
+                        .campo('id',identradaproduto)
+                        .campo('idproduto',id)
+                        .campo('quantidadeatual',0)
+                        .campo('novaquantidade',mDados.FieldByName('quantidadeatual').AsCurrency)
+                        .campo('idusuario',mDados.FieldByName('idusuario').AsInteger)
+                        .post;
+
+                  Result := 'Produto inserido com sucesso!';
+              end;
+            finally
+              mDados.DisposeOf;
+            end;
+     end;
+end;
+
+end.

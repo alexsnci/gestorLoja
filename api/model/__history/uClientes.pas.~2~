@@ -1,0 +1,50 @@
+unit uClientes;
+
+interface
+  uses uInterface.CLientes, uInterface.Scrips, uScrips;
+  type
+    TClientes = class(TInterfacedObject,iClientes)
+    private
+      script : IScripts;
+      function insert(dados:String):String;
+      function delete(id:integer):String;
+
+    public
+      { public declarations }
+
+    constructor Create;
+    destructor Destroy; override;
+    class function New : iClientes;
+    end;
+
+implementation
+
+{ TClientes }
+
+constructor TClientes.Create;
+begin
+    script := TScripts.New;
+end;
+
+function TClientes.delete(id: integer): String;
+begin
+
+end;
+
+destructor TClientes.Destroy;
+begin
+
+  inherited;
+end;
+
+function TClientes.insert(dados: String): String;
+begin
+
+end;
+
+class function TClientes.New: iClientes;
+begin
+   result := self.Create;
+end;
+
+end.

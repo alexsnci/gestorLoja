@@ -1,0 +1,27 @@
+unit uControler.promocoes;
+
+interface
+  uses uInterface.promocoes,horse,uPromocoes.model.model;
+
+  procedure Start;
+
+implementation
+  procedure onGetPromocoes(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          promo : iPromocoes;
+          promo := TPromocoesModel.New;
+  end;
+
+  procedure onPostPromocoes(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+
+  end;
+
+  procedure Start;
+  begin
+      Thorse.Get('Promocoes',onGetPromocoes);
+      Thorse.Post('Promocoes',onPostPromocoes);
+  end;
+
+end.

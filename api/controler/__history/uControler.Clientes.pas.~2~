@@ -1,0 +1,22 @@
+unit uControler.Clientes;
+
+interface
+  uses horse, uInterface.CLientes,uClientes;
+
+  procedure Start;
+
+implementation
+  procedure onGetClientes(aReq : ThorseRequest; aRes : ThorseResponse);
+  begin
+      var
+          cliente : iClientes;
+          cliente := TClientes.New;
+
+      aRes.Send(cliente.getEleitores(aReq.Query.Field('nome').AsString));
+
+  end;
+  procedure Start;
+  begin
+    Thorse.Get('clientes',onGetClientes)
+  end;
+end.

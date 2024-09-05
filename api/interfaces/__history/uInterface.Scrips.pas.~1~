@@ -1,0 +1,33 @@
+unit uInterface.Scrips;
+
+interface
+
+uses
+  System.JSON, Firedac.Comp.Client;
+  type
+      iScripts = interface
+        function sql(script : String):iScripts;
+        function parametro(param,valor:String):iScripts;overload;
+        function parametro(param:String;valor : Integer):iScripts;overload;
+        function parametro(param:String;valor : currency):iScripts;overload;
+        function retorno: String;
+        function edit:iScripts;
+        function post:iScripts;
+        function campo(descricao,valor:String):iScripts;overload;
+        function campo(descricao:String;valor : integer):iScripts;overload;
+        function campo(descricao:String;valor : currency):iScripts;overload;
+        function campo(descricao:String;valor : Double):iScripts;overload;
+        function campo(descricao:String;valor:TDateTime):iScripts;overload;
+        function exec:iScripts;
+        function geraCodigo(campoId,tabela: String):Integer;
+        function insert:iScripts;
+        function abrir: iScripts;
+        function compararSenhas(email,senhaClient: String): Boolean;
+        Function Cript(Action, Src: String): String;
+        function retornoArray: TJsonObject;
+        function retornoquery: TFDQuery;
+      end;
+
+implementation
+
+end.

@@ -1,0 +1,127 @@
+unit uPromocoes.model;
+
+interface
+uses
+  uInterface.promocoes, uScrips, uInterface.Scrips, Dataset.Serialize, System.JSON, Firedac.Comp.Client;
+
+implementation
+
+  type
+    TPromocoesModel = class(TInterfacedObject,iPromocoes)
+    private
+        script : iScripts;
+
+        function get(id : integer) : TJsonArray;
+        function post(dados : String) : String;
+
+    public
+      constructor Create;
+      destructor Destroy;override;
+      class function New : iPromocoes;
+    end;
+
+{ TPromocoesModel }
+
+constructor TPromocoesModel.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TPromocoesModel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TPromocoesModel.get(id: integer): TJsonArray;
+begin
+    if id <> 0 then
+    begin
+        result := script.sql('select * from promocoes where idestoque = :id').parametro('idestoque',id).abrir.retornoJson;
+    end
+    else
+    begin
+        result := script.sql('select * from promocoes').abrir.retornoJson;
+    end;
+end;
+
+class function TPromocoesModel.New: iPromocoes;
+begin
+  Result := self.Create;
+end;
+
+function TPromocoesModel.post(dados: String): String;
+var
+    datainicio, datafim : String;
+begin
+    if dados <> '' then
+    begin
+        var
+            mDados : TFDmemtable;
+            mDados := TFDmemtable.Create(nil);
+            try
+                mDados.LoadFromJSON(dados);
+
+                if mDados.FieldByName('id').AsInteger <> 0 then
+                begin
+                  script.sql('select * from promocoes where id = :id')
+                        .parametro('id',mDados.FieldByName('id').AsInteger)
+                        .abrir
+                        .edit
+                        .campo('idestoque',mDados.FieldByName('idestoque').AsInteger)
+                        .campo('datainicio',datainicio)
+                        .campo('datafim',datafim)
+                        .campo('status',mDados.FieldByName('status').asString)
+                        .campo('valor',mDados.FieldByName('valor').AsCurrency)
+                        .campo('valoratual',mDados.FieldByName('valoratual').AsCurrency)
+                        .campo('valordesconto',mDados.FieldByName('valordesconto').AsCurrency)
+                        .campo('porcentagem',mDados.FieldByName('porcentagem').AsCurrency)
+                        .post;
+
+                  Result := 'Promoção editada com sucesso!';
+                end
+                else
+                begin
+                var
+                  id : integer;
+                  id := 0;
+
+                  id := script.geraCodigo('id', 'promocoes');
+
+                  datainicio := copy(mDados.FieldByName('datainicio').AsString,4,2)
+                            +'/'+
+                            copy(mDados.FieldByName('datainicio').AsString,1,2)
+                           +'/'+
+                           copy(mDados.FieldByName('datainicio').AsString,7,4);
+
+                  datafim  := copy(mDados.FieldByName('datafim').AsString,4,2)
+                            +'/'+
+                            copy(mDados.FieldByName('datafim').AsString,1,2)
+                           +'/'+
+                           copy(mDados.FieldByName('datafim').AsString,7,4);
+
+                  script.sql('select * from promocoes where i = 2')
+                        .abrir
+                        .insert
+                        .campo('id',id)
+                        .campo('idestoque',mDados.FieldByName('idestoque').AsInteger)
+                        .campo('datainicio',datainicio)
+                        .campo('datafim',datafim)
+                        .campo('status',mDados.FieldByName('status').asString)
+                        .campo('valor',mDados.FieldByName('valor').AsCurrency)
+                        .campo('valoratual',mDados.FieldByName('valoratual').AsCurrency)
+                        .campo('valordesconto',mDados.FieldByName('valordesconto').AsCurrency)
+                        .campo('porcentagem',mDados.FieldByName('porcentagem').AsCurrency)
+                        .post;
+
+                  Result := 'Promoção inserida com sucesso!';
+                end;
+
+            finally
+                mDados.DisposeOf;
+            end;
+
+    end;
+end;
+
+end.

@@ -1,0 +1,85 @@
+unit uCategorias.model;
+
+interface
+  uses uInterface.categorias, uInterface.Scrips,uScrips, System.JSON,Firedac.Comp.Client,Dataset.Serialize;
+
+  type
+    TCategoriasModel = class(TInterfacedObject,ICategorias)
+    private
+        script : iScripts;
+        function get(valor:String):TJsonArray;
+        function post(dados : String):String;
+    public
+      constructor Create;
+      destructor Destroy;override;
+      class function New:ICategorias;
+    end;
+
+implementation
+
+{ TCategoriasModel }
+
+constructor TCategoriasModel.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TCategoriasModel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TCategoriasModel.get(valor: String): TJsonArray;
+begin
+
+end;
+
+class function TCategoriasModel.New: ICategorias;
+begin
+    Result := self.Create;
+end;
+
+function TCategoriasModel.post(dados: String): String;
+begin
+    if dados <> '' then
+     begin
+        var
+            mDados : TFDmemtable;
+            mDados := TFDmemtable.Create(nil);
+            try
+              mDados.LoadFromJSON(dados);
+              if mDados.FieldByName('id').asinteger <> 0 then
+              begin
+                    script.sql('select * from categorias where id = :id')
+                        .parametro('id',mDados.FieldByName('id').AsInteger)
+                        .abrir
+                        .edit
+                        .campo('descricao',mDados.FieldByName('descricao').AsString)
+                        .campo('status',mDados.FieldByName('status').AsString)
+                        .post;
+                        Result := 'Fornecedor editado com sucesso!';
+              end
+              else
+              begin
+
+                var
+                    id : integer;
+                    id := script.geraCodigo('id','categorias');
+
+                    script.sql('select * from categorias where 1=2')
+                          .abrir
+                          .insert
+                          .campo('id',id)
+                          .campo('descricao',mDados.FieldByName('descricao').AsString)
+                          .campo('status',mDados.FieldByName('status').AsString)
+                          .post;
+                          Result := 'Fornecedor inserido com sucesso!';
+              end;
+            finally
+              mDados.DisposeOf;
+            end;
+     end;
+end;
+
+end.

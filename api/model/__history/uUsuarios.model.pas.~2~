@@ -1,0 +1,60 @@
+unit uUsuarios.model;
+
+interface
+  uses System.JSON, uInterface.Scrips,uScrips,Dataset.Serialize, Firedac.Comp.Client, System.SysUtils,uInterface.usuarios;
+
+  type
+    TUsuariosModeel = class(TInterfacedObject,iUsuarios)
+    private
+        script : iScripts;
+       function get(nome:String):TJSonArray;
+       function post(dados : String) : String;
+    public
+       constructor Create;
+       destructor Destroy;override;
+       class function New:iUsuarios;
+    end;
+
+implementation
+
+{ TUsuariosModeel }
+
+constructor TUsuariosModeel.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TUsuariosModeel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TUsuariosModeel.get(nome: String): TJSonArray;
+begin
+    if nome<>'' then
+    begin
+      result := script.sql('select l.id, l.idcolaborador, l.status, l.username, l.userpermissoes, '+
+                           'c.nome from login as l left join colaboradores as c on l.idcolaborador = c.id where l.username = :nome')
+                      .parametro('nome','nome')
+                      .abrir.retornoJson
+
+    end
+    else
+    begin
+        result := script.sql('select l.id, l.idcolaborador, l.status, l.username, l.userpermissoes, c.nome from login as l left join colaboradores as c on l.idcolaborador = c.id order by c.nome')
+                        .abrir.retornoJson;
+    end;
+end;
+
+class function TUsuariosModeel.New: iUsuarios;
+begin
+    Result := self.Create;
+end;
+
+function TUsuariosModeel.post(dados: String): String;
+begin
+
+end;
+
+end.

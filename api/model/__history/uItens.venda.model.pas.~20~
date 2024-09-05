@@ -1,0 +1,361 @@
+unit uItens.venda.model;
+
+interface
+  uses System.JSON, uInterface.itens.venda,Dataset.Serialize,Firedac.Comp.Client,uScrips,uInterface.Scrips;
+  type
+    TItensVendaModel = class(TInterfacedObject,iItensVenda)
+    private
+        script : iScripts;
+
+       function get(idvenda : integer):TJSONArray;
+       function post(dados : String):String;
+       function removerumiten(idproduto, idvenda: integer): String;
+       function adicionarumitem(idproduto, idvenda: integer): String;
+    public
+    constructor Create;
+    destructor Destroy;override;
+    class function New : iItensVenda;
+
+    end;
+
+implementation
+
+{ TItensVendaModel }
+
+function TItensVendaModel.adicionarumitem(idproduto, idvenda: integer): String;
+begin
+    script.sql('select * from itens_venda where idproduto = :idproduto and idvenda = :idvenda')
+          .parametro('idvenda',idvenda)
+          .parametro('idproduto',idproduto)
+          .abrir;
+
+    if script.retornoquery.RecordCount>0 then
+    begin
+         script.retornoquery.Edit;
+         script.retornoquery.FieldByName('quantidade').AsFloat := script.retornoquery.FieldByName('quantidade').AsFloat +1;
+         script.retornoquery.FieldByName('subtotal').AsCurrency := (script.retornoquery.FieldByName('quantidade').AsFloat )*
+                                                                    script.retornoquery.FieldByName('valor').AsCurrency;
+         script.retornoquery.Post;
+
+         //editar quantidade do item
+
+         script.sql('select * from estoque where idproduto = :id')
+               .parametro('id', idproduto)
+               .abrir
+               .edit;
+
+         var qtd : Double;
+             qtd := 0;
+             qtd := script.retornoquery.FieldByName('quantidadeatual').AsFloat-1;
+
+         script.campo('quantidadeatual',qtd)
+               .post;
+         
+         //editar valor do pedido
+                  script.sql('select * from itens_venda where idvenda = :id')
+                        .parametro('id',idvenda)
+                        .abrir;
+
+                  var
+                          valordopedido : Currency;
+                          valordopedido := 0;
+
+                  if script.retornoquery.RecordCount>0 then
+                  begin
+
+                      while not script.retornoquery.eof do
+                      begin
+                          valordopedido := valordopedido + script.retornoquery.FieldByName('subtotal').AsCurrency;
+                          script.retornoquery.Next;
+                      end;
+
+                      script.sql('select * from venda where id = :id')
+                        .parametro('id',idvenda)
+                        .abrir                     
+                        .edit
+                        .Campo('valorcompra', valordopedido)                        
+                        .post;
+
+                  end;
+
+
+          Result := 'Produto editado com sucesso'
+
+    end;
+end;
+
+constructor TItensVendaModel.Create;
+begin
+     script := TScripts.New;
+end;
+
+destructor TItensVendaModel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TItensVendaModel.get(idvenda: integer): TJSONArray;
+begin
+    Result := script.sql('select ip.*, p.descricao as produto from itens_venda as ip join produtos as p on ip.idproduto = p.id where ip.idvenda = :id')
+                    .parametro('id',idvenda)
+                    .abrir
+                    .retornoJson;
+end;
+
+class function TItensVendaModel.New: iItensVenda;
+begin
+   result := Self.Create;
+end;
+
+function TItensVendaModel.post(dados: String): String;
+begin
+    if dados <> '' then
+    begin
+        var
+            mDados : TFDmemtable;
+            mDados := TFDmemtable.Create(nil);
+            try
+              mDados.LoadFromJSON(dados);
+
+              script.sql('select * from itens_venda where idproduto = :idproduto and idvenda = :idvenda')
+                    .parametro('idvenda',mDados.FieldByName('idvenda').AsInteger)
+                    .parametro('idproduto',mDados.FieldByName('idproduto').AsInteger)
+                    .abrir;
+
+              if script.retornoquery.RecordCount>0 then
+              begin
+                  //editar item inserido
+                  var
+                      valor : Currency;
+                      valor := (script.retornoquery.FieldByName('quantidade').AsFloat + 1) * mDados.FieldByName('valor').AsCurrency;
+
+                  script.retornoquery.Edit;
+                  script.retornoquery.FieldByName('quantidade').AsFloat := script.retornoquery.FieldByName('quantidade').AsFloat + mDados.FieldByName('quantidade').AsFloat;
+                  script.retornoquery.FieldByName('subtotal').AsCurrency := valor;
+                  script.retornoquery.Post;
+
+
+                  //editar quantidade do item
+
+                   script.sql('select * from estoque where idproduto = :id')
+                         .parametro('id', mDados.FieldByName('idproduto').AsInteger)
+                         .abrir
+                         .edit;
+
+                   var qtd : Double;
+                       qtd := 0;
+                       qtd := script.retornoquery.FieldByName('quantidadeatual').AsFloat-1;
+
+                   script.campo('quantidadeatual',qtd)
+                         .post;
+
+
+                 //editar valor do pedido
+                  script.sql('select * from itens_venda where idvenda = :id')
+                        .parametro('id',mDados.FieldByName('idvenda').AsInteger)
+                        .abrir;
+
+                  var
+                          valordopedido : Currency;
+                          valordopedido := 0;
+
+                  if script.retornoquery.RecordCount>0 then
+                  begin
+
+                      while not script.retornoquery.eof do
+                      begin
+                          valordopedido := valordopedido + script.retornoquery.FieldByName('subtotal').AsCurrency;
+                          script.retornoquery.Next;
+                      end;
+
+                      script.sql('select * from venda where id = :id')
+                        .parametro('id',mDados.FieldByName('idvenda').AsInteger)
+                        .abrir
+
+                      
+                        .edit
+                        .Campo('valorcompra', valordopedido)
+                        
+                        .post;
+
+                  end;
+
+                  result := 'Produto editado com sucesso!';
+              end
+              else
+              begin
+                  var
+                      id : integer;
+                      id := 0;
+                      id := script.geraCodigo('id','itens_venda');
+
+                  script.sql('select * from itens_venda where 1=2')
+                        .abrir
+                        .insert
+                        .campo('id',id)
+                        .campo('idproduto',mdados.FieldByName('idproduto').AsInteger)
+                        .campo('idvenda',mDados.FieldByName('idvenda').AsInteger)
+                        .campo('obs',mDados.FieldByName('obs').AsString)
+                        .campo('quantidade',mDados.FieldByName('quantidade').AsFloat)
+                        .campo('subtotal',mDados.FieldByName('subtotal').AsCurrency)
+                        .campo('valor',mDados.FieldByName('valor').AsCurrency)
+                        .post;
+
+                  //editar quantidade do item
+
+                   script.sql('select * from estoque where idproduto = :id')
+                         .parametro('id', mDados.FieldByName('idproduto').AsInteger)
+                         .abrir
+                         .edit;
+
+                   var qtd : Double;
+                       qtd := 0;
+                       qtd := script.retornoquery.FieldByName('quantidadeatual').AsFloat-1;
+
+                   script.campo('quantidadeatual',qtd)
+                         .post;
+
+                  //editar valor do pedido
+                  script.sql('select * from itens_venda where idvenda = :id')
+                        .parametro('id',mDados.FieldByName('idvenda').AsInteger)
+                        .abrir;
+
+                  var
+                          valordopedido : Currency;
+                          valordopedido := 0;
+
+                  if script.retornoquery.RecordCount>0 then
+                  begin
+
+                      while not script.retornoquery.eof do
+                      begin
+                          valordopedido := valordopedido + script.retornoquery.FieldByName('subtotal').AsCurrency;
+                          script.retornoquery.Next;
+                      end;
+
+                      script.sql('select * from venda where id = :id')
+                        .parametro('id',mDados.FieldByName('idvenda').AsInteger)
+                        .abrir
+
+                      
+                        .edit
+                        .Campo('valorcompra', valordopedido)
+                        
+                        .post;
+
+                  end;
+
+                  Result := 'Itens inserido com sucesso';
+              end;
+
+            finally
+                mdados.DisposeOf;
+            end;
+
+    end;
+end;
+
+function TItensVendaModel.removerumiten(idproduto, idvenda: integer): String;
+begin
+    script.sql('select * from itens_venda where idproduto = :idproduto and idvenda = :idvenda')
+          .parametro('idvenda',idvenda)
+          .parametro('idproduto',idproduto)
+          .abrir;
+
+
+
+    if script.retornoquery.RecordCount>0 then
+    begin
+         if script.retornoquery.FieldByName('quantidade').AsFloat = 1 then
+         begin
+             script.sql('delete from itens_venda where idproduto = :idp and idvenda = :idv')
+                    .parametro('idp',idproduto)
+                    .parametro('idv',idvenda)
+                    .exec;
+
+             //editar quantidade do item
+
+                   script.sql('select * from estoque where idproduto = :id')
+                         .parametro('id', idproduto)
+                         .abrir
+                         .edit;
+
+                   var qtd : Double;
+                       qtd := 0;
+                       qtd := script.retornoquery.FieldByName('quantidadeatual').AsFloat+1;
+
+                   script.campo('quantidadeatual',qtd)
+                         .post;
+
+          //editar valor do pedido
+                  script.sql('select * from itens_venda where idvenda = :id')
+                        .parametro('id',idvenda)
+                        .abrir;
+
+
+
+                  script.sql('select * from venda where id = :id')
+                        .parametro('id',idvenda)
+                        .abrir
+                        .edit
+                        .Campo('valorcompra', 0)
+                        .post;
+                  
+             result := 'Produto excluido com sucesso!';               
+             exit;
+         end;
+         script.retornoquery.Edit;
+         script.retornoquery.FieldByName('quantidade').AsFloat := script.retornoquery.FieldByName('quantidade').AsFloat -1;
+         script.retornoquery.FieldByName('subtotal').AsCurrency := (script.retornoquery.FieldByName('quantidade').AsFloat)*
+                                                                    script.retornoquery.FieldByName('valor').AsCurrency;
+         script.retornoquery.Post;
+
+         //editar quantidade do item
+
+                   script.sql('select * from estoque where idproduto = :id')
+                         .parametro('id', idproduto)
+                         .abrir
+                         .edit;
+
+                   var qtd : Double;
+                       qtd := 0;
+                       qtd := script.retornoquery.FieldByName('quantidadeatual').AsFloat+1;
+
+                   script.campo('quantidadeatual',qtd)
+                         .post;
+
+          //editar valor do pedido
+                  script.sql('select * from itens_venda where idvenda = :id')
+                        .parametro('id',idvenda)
+                        .abrir;
+
+                  var
+                          valordopedido : Currency;
+                          valordopedido := 0;
+
+                  if script.retornoquery.RecordCount>0 then
+                  begin
+
+                      while not script.retornoquery.eof do
+                      begin
+                          valordopedido := valordopedido + script.retornoquery.FieldByName('subtotal').AsCurrency;
+                          script.retornoquery.Next;
+                      end;
+
+                      script.sql('select * from venda where id = :id')
+                        .parametro('id',idvenda)
+                        .abrir                     
+                        .edit
+                        .Campo('valorcompra', valordopedido)                        
+                        .post;
+
+                  end;
+
+           Result := 'Produto editado com sucesso'
+
+    end;
+
+end;
+
+end.

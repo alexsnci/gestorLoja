@@ -1,0 +1,86 @@
+unit uSetores;
+
+interface
+  uses System.JSON, Dataset.Serialize, Uinterface.setores, UInterface.Scrips,uScrips,Firedac.Comp.Client;
+  type
+    TSetoresModel = class(TinterfacedObject, ISetores)
+    private
+      script : iScripts;
+      function get(setor : String) : TJsonArray;
+      function post(dados : String) : String;
+    public
+      constructor Create;
+      destructor Destroy; override;
+      class function New: ISetores;
+    end;
+
+implementation
+
+{ TSetoresModel }
+
+constructor TSetoresModel.Create;
+begin
+    script := TScripts.New;
+end;
+
+destructor TSetoresModel.Destroy;
+begin
+
+  inherited;
+end;
+
+function TSetoresModel.get(setor: String): TJsonArray;
+begin
+   if setor <> '' then
+        result := script.sql('select * from setores where descricao like :nome order by descricao').parametro('nome','%'+setor+'%').abrir.retornoJson
+    else
+        result := script.sql('select * from setores order by descricao').abrir.retornoJson;
+end;
+
+class function TSetoresModel.New: ISetores;
+begin
+  result := self.Create;
+end;
+
+function TSetoresModel.post(dados: String): String;
+begin
+   if dados <> '' then
+     begin
+        var
+            mDados : TFDmemtable;
+            mDados := TFDmemtable.Create(nil);
+            try
+              mDados.LoadFromJSON(dados);
+              if mDados.FieldByName('id').asinteger <> 0 then
+              begin
+                    script.sql('select * from setores where id = :id')
+                        .parametro('id',mDados.FieldByName('id').AsInteger)
+                        .abrir
+                        .edit
+                        .campo('descricao',mDados.FieldByName('descricao').AsString)
+                        .post;
+
+                        Result := 'Setor editado com sucesso!';
+              end
+              else
+              begin
+
+                var
+                    id : integer;
+                    id := script.geraCodigo('id','setores');
+
+                    script.sql('select * from setores where 1=2')
+                          .abrir
+                          .insert
+                          .campo('id',id)
+                          .campo('descricao',mDados.FieldByName('descricao').AsString)
+                          .post;
+                          Result := 'Setor inserido com sucesso!';
+              end;
+            finally
+              mDados.DisposeOf;
+            end;
+     end;
+end;
+
+end.

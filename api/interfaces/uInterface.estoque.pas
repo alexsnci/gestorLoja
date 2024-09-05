@@ -1,0 +1,16 @@
+unit uInterface.estoque;
+
+interface
+  uses System.JSON;
+   type
+    IEstoque = interface
+        function post(dados : String) : String;
+        function get(valor : String) : TJSonArray;
+        function getEstoquePorCategoria(id : integer): TJsonArray;
+        function getProduto(valor:String):TJsonArray;
+        function entradademercadoria(id:integer; qtd:Double;iduser:integer):String;
+    end;
+
+implementation
+
+end.

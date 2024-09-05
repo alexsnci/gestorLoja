@@ -1,0 +1,282 @@
+unit uScrips;
+
+interface
+
+uses
+  uInterface.Scrips,uDm
+  ,fireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.Phys.FB, FireDAC.Phys.FBDef, FireDAC.FMXUI.Wait,
+  FireDAC.Comp.UI, FireDAC.Phys.IBBase, Data.DB, FireDAC.Comp.Client,firedac.Stan.Param,
+  FireDAC.DApt
+  ,Dataset.Serialize, System.Classes,Vcl.Forms, System.JSON;
+    type
+        TScripts = class(TInterfacedObject,iScripts)
+        private
+          { private declarations }
+              dao    : TDm;
+              FQuery : TFDQuery;
+              DQuery : TFDQuery;
+
+              function sql(script : String):iScripts;
+              function parametro(param,valor:String):iScripts;overload;
+              function parametro(param:String;valor : Integer):iScripts;overload;
+              function parametro(param:String;valor : currency):iScripts;overload;
+              function retorno: String;
+              function retornoquery: TFDQuery;
+              function retornoArray: TjsonObject;
+              function abrir: iScripts;
+              function edit:iScripts;
+              function post:iScripts;
+              function campo(descricao,valor:String):iScripts;overload;
+              function campo(descricao:String;valor : integer):iScripts;overload;
+              function campo(descricao:String;valor : currency):iScripts;overload;
+              function campo(descricao:String;valor : Double):iScripts;overload;
+              function campo(descricao:String;valor:TDateTime):iScripts;overload;
+              function exec:iScripts;
+              function geraCodigo(campoId,tabela: String): integer;
+              function insert:iScripts;
+              function compararSenhas(email,senhaClient: String): Boolean;
+              Function Cript(Action, Src: String): String;
+
+        public
+          { public declarations }
+
+            constructor Create;
+            destructor Destroy;override;
+            class function New : iScripts;
+        end;
+
+implementation
+
+uses
+  System.SysUtils;
+
+{ TScripts }
+
+Function TScripts.Cript(Action, Src: String): String;
+label
+  Fim;
+var
+  KeyLen : Integer;
+  KeyPos : Integer;
+  OffSet : Integer;
+  Dest, Key : String;
+  SrcPos : Integer;
+  SrcAsc : Integer;
+  TmpSrcAsc : Integer;
+  Range : Integer;
+begin
+  if (Src = '') Then
+  begin
+    Result:= '';
+    Goto Fim;
+  end;
+  Key    := 'YUQL23KL23DF90WI5E1JAS467NMCXXL6JAOAUWWMCL0AOMM4A4VZYW9KHJUI2347EJHJKDF3424SKL K3LAKDJSL9RTIKJ 2A5L9E4X@1010';
+  Dest   := '';
+  KeyLen := Length(Key);
+  KeyPos := 0;
+  SrcPos := 0;
+  SrcAsc := 0;
+  Range  := 256;
+  if (Action = UpperCase('C')) then
+  begin
+    Randomize;
+    OffSet := Random(Range);
+    Dest   := Format('%1.2x',[OffSet]);
+    for SrcPos := 1 to Length(Src) do
+    begin
+      Application.ProcessMessages;
+      SrcAsc := (Ord(Src[SrcPos]) + OffSet) Mod 255;
+      if KeyPos < KeyLen then
+        KeyPos := KeyPos + 1
+      else
+        KeyPos := 1;
+      SrcAsc := SrcAsc Xor Ord(Key[KeyPos]);
+      Dest   := Dest + Format('%1.2x',[SrcAsc]);
+      OffSet := SrcAsc;
+    end;
+  end
+  else
+  if (Action = UpperCase('D')) then
+  begin
+    OffSet := StrToInt('$'+ copy(Src,1,2));
+    SrcPos := 3;
+    repeat
+      SrcAsc := StrToInt('$'+ copy(Src,SrcPos,2));
+      if (KeyPos < KeyLen) then
+        KeyPos := KeyPos + 1
+      else
+        KeyPos := 1;
+      TmpSrcAsc := SrcAsc Xor Ord(Key[KeyPos]);
+      if TmpSrcAsc <= OffSet then
+        TmpSrcAsc := 255 + TmpSrcAsc - OffSet
+      else
+        TmpSrcAsc := TmpSrcAsc - OffSet;
+      Dest   := Dest + Chr(TmpSrcAsc);
+      OffSet := SrcAsc;
+      SrcPos := SrcPos + 2;
+    until
+      (SrcPos >= Length(Src));
+  end;
+  Result:= Dest;
+  Fim:
+END;
+
+function TScripts.abrir: iScripts;
+begin
+    FQuery.Open;
+    Result := self;
+end;
+
+function TScripts.campo(descricao: String; valor: currency): iScripts;
+begin
+    FQuery.FieldByName(descricao).AsCurrency  := valor;
+    Result := self;
+end;
+
+function TScripts.campo(descricao: String; valor: TDateTime): iScripts;
+begin
+    FQuery.FieldByName(descricao).AsDateTime  := valor;
+    Result := self;
+end;
+
+function TScripts.campo(descricao: String; valor: Double): iScripts;
+begin
+    FQuery.FieldByName(descricao).AsFloat  := valor;
+    Result := self;
+end;
+
+function TScripts.compararSenhas(email,senhaClient: String): Boolean;
+begin
+    Result := false;
+    FQuery.Close;
+    FQuery.SQL.Clear;
+    FQuery.SQL.Text := 'Select senha from vendedores where email = :email';
+    FQuery.ParamByName('email').AsString := email;
+    FQuery.Open;
+
+    if FQuery.RecordCount>0 then
+    begin
+        var
+            senhaC  : String;
+            senhaC  := Cript('D',senhaClient);
+        var
+            SenhaS  : String;
+            SenhaS  := Cript('D',FQuery.FieldByName('senha').AsString);
+        if SenhaC=SenhaS then
+            Result := true;
+    end
+
+end;
+
+function TScripts.campo(descricao: String; valor: integer): iScripts;
+begin
+    FQuery.FieldByName(descricao).asinteger  := valor;
+    Result := self;
+end;
+
+function TScripts.campo(descricao, valor: String): iScripts;
+begin
+    FQuery.FieldByName(descricao).asstring  := valor;
+    Result := self;
+end;
+
+constructor TScripts.Create;
+begin
+    dao    := Tdm.Create(nil);
+    FQuery := TFDQuery.Create(nil);
+    DQuery := TFDQuery.Create(nil);
+
+    FQuery.Connection  := dao.conexao;
+    DQuery.Connection  := dao.conexao;
+    dao.conexao.Connected := true;
+end;
+
+destructor TScripts.Destroy;
+begin
+    DQuery.DisposeOf;
+    FQuery.DisposeOf;
+    dao.conexao.Connected := false;
+    dm.DisposeOf;
+  inherited;
+end;
+
+function TScripts.edit: iScripts;
+begin
+    FQuery.Edit;
+    Result := Self;
+end;
+
+function TScripts.exec: iScripts;
+begin
+    FQuery.ExecSQL;
+    Result := self;
+end;
+
+function TScripts.geraCodigo(campoId,tabela: String): integer;
+begin
+    sql('SELECT COALESCE(MAX('+campoId+'+1),1) AS CODIGO FROM '+tabela).abrir;
+    Result := FQuery.FieldByName('codigo').AsInteger;
+end;
+
+function TScripts.insert: iScripts;
+begin
+    FQuery.Insert;
+    Result := Self;
+end;
+
+class function TScripts.New: iScripts;
+begin
+    Result := Self.Create;
+end;
+
+function TScripts.retorno: String;
+begin
+    Result := FQuery.ToJSONArrayString();
+
+end;
+
+function TScripts.retornoArray: TjsonObject;
+begin
+    Result := FQuery.ToJSONObject();
+end;
+
+function TScripts.retornoquery: TFDQuery;
+begin
+    Result := FQuery;
+end;
+
+function TScripts.parametro(param: String; valor: currency): iScripts;
+begin
+    FQuery.ParamByName(param).AsCurrency  := valor;
+    Result := self;
+end;
+
+function TScripts.parametro(param: String; valor: Integer): iScripts;
+begin
+    FQuery.ParamByName(param).asinteger  := valor;
+    Result := self;
+end;
+
+function TScripts.parametro(param, valor: String): iScripts;
+begin
+    FQuery.ParamByName(param).asstring  := valor;
+    Result := self;
+end;
+
+function TScripts.post: iScripts;
+begin
+    FQuery.Post;
+    Result := Self;
+end;
+
+function TScripts.sql(script: String): iScripts;
+begin
+    FQuery.Close;
+    FQuery.SQL.Clear;
+    FQuery.SQL.Text := script;
+    Result := self;
+end;
+
+end.

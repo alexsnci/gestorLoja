@@ -1,0 +1,29 @@
+unit uControler.marcas;
+
+interface
+  uses horse,uInterface.marcas,uMarcas.model;
+  procedure Start;
+
+implementation
+procedure onGetProdutos(aReq : ThorseRequest; aRes : ThorseResponse);
+begin
+    var
+        produto : IMarcas;
+        produto := TMarcasModel.New;
+        aRes.Send(produto.Get(aReq.Query.Field('nome').AsString));
+end;
+
+procedure onPostProdutos(aReq : ThorseRequest; aRes : ThorseResponse);
+begin
+    var
+        produto : IMarcas;
+        produto := TMarcasModel.New;
+        aRes.Send(produto.post(aReq.Body));
+end;
+procedure Start;
+begin
+    Thorse.Get('Marcas',onGetProdutos);
+    Thorse.Post('Marcas',onPostProdutos);
+end;
+
+end.
